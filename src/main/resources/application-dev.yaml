@@ -1,0 +1,28 @@
+server:
+  port: 10003
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/calendar_entry?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  devtools:
+    livereload:
+      enabled: true
+
+nexon:
+  api:
+    base-url: https://open.api.nexon.com
+    api-key: test_f0308276b6ff3e284f0e73114427db9f183d7dbd2d2a0070a598dbaeb2a7713aefe8d04e6d233bd35cf2fabdeb93fb0d

@@ -1,0 +1,19 @@
+server:
+  port: 10001
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/wiki_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update # 개발 단계에서 유용하게 엔티티 변경사항을 DB에 반영해 줍니다.
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

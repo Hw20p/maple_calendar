@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>날짜 상세 - 메이플 캘린더</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light-mode');</script>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><a th:href="@{/calendar}">🍁 메이플 캘린더</a></div>
+    <div class="nav-links">
+        <a th:href="@{/calendar}">캘린더</a>
+        <a th:href="@{/characters}">캐릭터 관리</a>
+        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">☀️</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- 헤더 -->
+    <div class="day-header">
+        <a th:href="@{/calendar(characterId=${character.id})}" class="btn btn-back">← 캘린더로</a>
+        <h2 class="day-title"
+            th:text="${#temporals.format(dayRecord.date, 'yyyy년 MM월 dd일 (E)', new java.util.Locale('ko'))}"></h2>
+        <div class="character-chip">
+            <img th:src="${character.characterImage}" th:alt="${character.characterName}"
+                 class="chip-img" onerror="this.style.display='none'">
+            <span th:text="${character.characterName + ' Lv.' + character.characterLevel}"></span>
+        </div>
+    </div>
+
+    <div class="day-sections">
+
+        <!-- ===== 보스 기록 ===== -->
+        <div class="section">
+            <div class="section-header">
+                <h3>⚔ 보스 기록</h3>
+                <button class="btn btn-add" onclick="toggleForm('bossForm')">+ 추가</button>
+            </div>
+
+            <!-- 보스 추가 폼 -->
+            <div id="bossForm" class="add-form hidden">
+                <form th:action="@{/calendar/boss/add}" method="post">
+                    <input type="hidden" name="characterId" th:value="${character.id}">
+                    <input type="hidden" name="recordDate" th:value="${dayRecord.date}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>보스명</label>
+                            <select name="bossName" class="form-control">
+                                <option value="카오스 벨룸">카오스 벨룸</option>
+                                <option value="하드 루시드">하드 루시드</option>
+                                <option value="하드 윌">하드 윌</option>
+                                <option value="하드 데미안">하드 데미안</option>
+                                <option value="하드 매그너스">하드 매그너스</option>
+                                <option value="카오스 핑크빈">카오스 핑크빈</option>
+                                <option value="카오스 파풀라투스">카오스 파풀라투스</option>
+                                <option value="카오스 자쿰">카오스 자쿰</option>
+                                <option value="노말 자쿰">노말 자쿰</option>
+                                <option value="카오스 피에르">카오스 피에르</option>
+                                <option value="반반">반반</option>
+                                <option value="하드 반반">하드 반반</option>
+                                <option value="스우">스우</option>
+                                <option value="하드 스우">하드 스우</option>
+                                <option value="듄켈">듄켈</option>
+                                <option value="하드 듄켈">하드 듄켈</option>
+                                <option value="더 시드">더 시드</option>
+                                <option value="검은 마법사">검은 마법사</option>
+                                <option value="카링">카링</option>
+                                <option value="진 힐라">진 힐라</option>
+                                <option value="하드 진 힐라">하드 진 힐라</option>
+                                <option value="직접 입력">직접 입력</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>난이도</label>
+                            <select name="difficulty" class="form-control">
+                                <option value="노말">노말</option>
+                                <option value="하드">하드</option>
+                                <option value="카오스">카오스</option>
+                                <option value="익스트림">익스트림</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>클리어</label>
+                            <select name="cleared" class="form-control">
+                                <option value="true">클리어</option>
+                                <option value="false">실패</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>획득 메소</label>
+                            <input type="number" name="gainedMeso" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>메모</label>
+                        <input type="text" name="memo" class="form-control" placeholder="메모 (선택)">
+                    </div>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <button type="button" class="btn btn-cancel" onclick="toggleForm('bossForm')">취소</button>
+                </form>
+            </div>
+
+            <!-- 보스 목록 -->
+            <div th:if="${dayRecord.bossRecords.isEmpty()}" class="empty-record">기록 없음</div>
+            <div class="record-list">
+                <div th:each="boss : ${dayRecord.bossRecords}" class="record-item boss-item"
+                     th:classappend="${boss.cleared ? ' cleared' : ' failed'}">
+                    <div class="record-main">
+                        <span class="record-status" th:text="${boss.cleared ? '✅' : '❌'}"></span>
+                        <span class="record-name" th:text="${boss.bossName}"></span>
+                        <span class="record-tag" th:text="${boss.difficulty}"></span>
+                        <span class="record-meso" th:if="${boss.gainedMeso != null}"
+                              th:text="${#numbers.formatInteger(boss.gainedMeso, 0, 'COMMA') + ' 메소'}"></span>
+                    </div>
+                    <div class="record-memo" th:if="${boss.memo != null and !boss.memo.isEmpty()}"
+                         th:text="${boss.memo}"></div>
+                    <form th:action="@{/calendar/boss/{id}/delete(id=${boss.id})}" method="post" class="delete-form">
+                        <input type="hidden" name="characterId" th:value="${character.id}">
+                        <input type="hidden" name="date" th:value="${dayRecord.date}">
+                        <button type="submit" class="btn btn-delete" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 사냥 기록 ===== -->
+        <div class="section">
+            <div class="section-header">
+                <h3>🗡 사냥 기록</h3>
+                <button class="btn btn-add" onclick="toggleForm('huntingForm')">+ 추가</button>
+            </div>
+
+            <div id="huntingForm" class="add-form hidden">
+                <form th:action="@{/calendar/hunting/add}" method="post">
+                    <input type="hidden" name="characterId" th:value="${character.id}">
+                    <input type="hidden" name="recordDate" th:value="${dayRecord.date}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>사냥터</label>
+                            <input type="text" name="huntingGround" class="form-control"
+                                   placeholder="ex) 레헬른, 아르카나" required>
+                        </div>
+                        <div class="form-group">
+                            <label>사냥 시간 (분)</label>
+                            <input type="number" name="durationMinutes" class="form-control" placeholder="60">
+                        </div>
+                        <div class="form-group">
+                            <label>획득 경험치</label>
+                            <input type="number" name="gainedExp" class="form-control" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>획득 메소</label>
+                            <input type="number" name="gainedMeso" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>메모</label>
+                        <input type="text" name="memo" class="form-control" placeholder="메모 (선택)">
+                    </div>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <button type="button" class="btn btn-cancel" onclick="toggleForm('huntingForm')">취소</button>
+                </form>
+            </div>
+
+            <div th:if="${dayRecord.huntingRecords.isEmpty()}" class="empty-record">기록 없음</div>
+            <div class="record-list">
+                <div th:each="hunting : ${dayRecord.huntingRecords}" class="record-item hunting-item">
+                    <div class="record-main">
+                        <span class="record-name" th:text="${hunting.huntingGround}"></span>
+                        <span class="record-tag" th:if="${hunting.durationMinutes != null}"
+                              th:text="${hunting.durationMinutes + '분'}"></span>
+                        <span class="record-meso" th:if="${hunting.gainedExp != null}"
+                              th:text="${#numbers.formatInteger(hunting.gainedExp, 0, 'COMMA') + ' EXP'}"></span>
+                        <span class="record-meso" th:if="${hunting.gainedMeso != null}"
+                              th:text="${#numbers.formatInteger(hunting.gainedMeso, 0, 'COMMA') + ' 메소'}"></span>
+                    </div>
+                    <div class="record-memo" th:if="${hunting.memo != null and !hunting.memo.isEmpty()}"
+                         th:text="${hunting.memo}"></div>
+                    <form th:action="@{/calendar/hunting/{id}/delete(id=${hunting.id})}" method="post" class="delete-form">
+                        <input type="hidden" name="characterId" th:value="${character.id}">
+                        <input type="hidden" name="date" th:value="${dayRecord.date}">
+                        <button type="submit" class="btn btn-delete" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 득템 기록 ===== -->
+        <div class="section">
+            <div class="section-header">
+                <h3>💎 득템 기록</h3>
+                <button class="btn btn-add" onclick="toggleForm('itemForm')">+ 추가</button>
+            </div>
+
+            <div id="itemForm" class="add-form hidden">
+                <form th:action="@{/calendar/item/add}" method="post">
+                    <input type="hidden" name="characterId" th:value="${character.id}">
+                    <input type="hidden" name="recordDate" th:value="${dayRecord.date}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>아이템명</label>
+                            <input type="text" name="itemName" class="form-control"
+                                   placeholder="ex) 아케인셰이드 완드" required>
+                        </div>
+                        <div class="form-group">
+                            <label>아이템 등급</label>
+                            <select name="itemGrade" class="form-control">
+                                <option value="">선택</option>
+                                <option value="일반">일반</option>
+                                <option value="레어">레어</option>
+                                <option value="에픽">에픽</option>
+                                <option value="유니크">유니크</option>
+                                <option value="레전드리">레전드리</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>획득 경로</label>
+                            <select name="obtainSource" class="form-control">
+                                <option value="보스드랍">보스드랍</option>
+                                <option value="사냥드랍">사냥드랍</option>
+                                <option value="거래소">거래소</option>
+                                <option value="제작">제작</option>
+                                <option value="이벤트">이벤트</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>획득 장소</label>
+                            <input type="text" name="obtainLocation" class="form-control"
+                                   placeholder="ex) 듄켈, 아르카나">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>거래 가능 여부</label>
+                            <select name="tradeable" class="form-control">
+                                <option value="">선택</option>
+                                <option value="true">거래 가능</option>
+                                <option value="false">귀속</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>메모</label>
+                            <input type="text" name="memo" class="form-control" placeholder="메모 (선택)">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <button type="button" class="btn btn-cancel" onclick="toggleForm('itemForm')">취소</button>
+                </form>
+            </div>
+
+            <div th:if="${dayRecord.itemRecords.isEmpty()}" class="empty-record">기록 없음</div>
+            <div class="record-list">
+                <div th:each="item : ${dayRecord.itemRecords}" class="record-item item-item">
+                    <div class="record-main">
+                        <span class="record-grade" th:if="${item.itemGrade != null}"
+                              th:text="${item.itemGrade}"
+                              th:classappend="${'grade-' + (item.itemGrade != null ? item.itemGrade : '')}"></span>
+                        <span class="record-name" th:text="${item.itemName}"></span>
+                        <span class="record-tag" th:if="${item.obtainSource != null}" th:text="${item.obtainSource}"></span>
+                        <span class="record-tag" th:if="${item.obtainLocation != null}" th:text="${item.obtainLocation}"></span>
+                        <span class="record-tag" th:if="${item.tradeable != null}"
+                              th:text="${item.tradeable ? '거래가능' : '귀속'}"></span>
+                    </div>
+                    <div class="record-memo" th:if="${item.memo != null and !item.memo.isEmpty()}"
+                         th:text="${item.memo}"></div>
+                    <form th:action="@{/calendar/item/{id}/delete(id=${item.id})}" method="post" class="delete-form">
+                        <input type="hidden" name="characterId" th:value="${character.id}">
+                        <input type="hidden" name="date" th:value="${dayRecord.date}">
+                        <button type="submit" class="btn btn-delete" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

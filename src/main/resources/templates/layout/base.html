@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메이플스토리 캘린더</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">
+        <a th:href="@{/calendar}">🍁 메이플 캘린더</a>
+    </div>
+    <div class="nav-links">
+        <a th:href="@{/calendar}">캘린더</a>
+        <a th:href="@{/characters}">캐릭터 관리</a>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- 플래시 메시지 -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- 페이지 콘텐츠 -->
+    <th:block th:replace="${content}"></th:block>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

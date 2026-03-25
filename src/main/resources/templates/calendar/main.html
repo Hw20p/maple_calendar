@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메이플스토리 캘린더</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light-mode');</script>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><a th:href="@{/calendar}">🍁 메이플 캘린더</a></div>
+    <div class="nav-links">
+        <a th:href="@{/calendar}" class="active">캘린더</a>
+        <a th:href="@{/characters}">캐릭터 관리</a>
+        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">☀️</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- 캐릭터가 없을 때 -->
+    <div th:if="${characters == null or characters.isEmpty()}" class="empty-state">
+        <h2>등록된 캐릭터가 없습니다</h2>
+        <p>캐릭터를 먼저 등록해 주세요.</p>
+        <a th:href="@{/characters}" class="btn btn-primary">캐릭터 등록하기</a>
+    </div>
+
+    <div th:if="${characters != null and !characters.isEmpty()}">
+        <!-- 캐릭터 선택 + 월 네비게이션 -->
+        <div class="calendar-header">
+            <div class="character-selector">
+                <form th:action="@{/calendar}" method="get" id="characterForm">
+                    <select name="characterId" onchange="document.getElementById('characterForm').submit()"
+                            class="select-character">
+                        <th:block th:each="ch : ${characters}">
+                            <option th:value="${ch.id}"
+                                    th:text="${ch.characterName + ' Lv.' + ch.characterLevel + (ch.mainCharacter ? ' ★' : '')}"
+                                    th:selected="${selectedCharacter != null and ch.id == selectedCharacter.id}">
+                            </option>
+                        </th:block>
+                    </select>
+                    <input type="hidden" name="year" th:value="${yearMonth?.year}">
+                    <input type="hidden" name="month" th:value="${yearMonth?.monthValue}">
+                </form>
+            </div>
+
+            <div class="month-nav" th:if="${yearMonth != null}">
+                <a th:href="@{/calendar(characterId=${selectedCharacter?.id}, year=${prevMonth?.year}, month=${prevMonth?.monthValue})}"
+                   class="btn btn-nav">‹</a>
+                <span class="month-title"
+                      th:text="${yearMonth.year + '년 ' + yearMonth.monthValue + '월'}"></span>
+                <a th:href="@{/calendar(characterId=${selectedCharacter?.id}, year=${nextMonth?.year}, month=${nextMonth?.monthValue})}"
+                   class="btn btn-nav">›</a>
+            </div>
+
+            <!-- 보스 결정 동기화 버튼 -->
+            <div th:if="${selectedCharacter != null}">
+                <form th:action="@{/calendar/boss/sync}" method="post">
+                    <input type="hidden" name="characterId" th:value="${selectedCharacter.id}">
+                    <input type="hidden" name="year" th:value="${yearMonth?.year}">
+                    <input type="hidden" name="month" th:value="${yearMonth?.monthValue}">
+                    <button type="submit" class="btn btn-sync">🔄 보스 결정 동기화</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 캐릭터 정보 카드 -->
+        <div class="character-card" th:if="${selectedCharacter != null}">
+            <img th:src="${selectedCharacter.characterImage}" th:alt="${selectedCharacter.characterName}"
+                 class="character-img" onerror="this.style.display='none'">
+            <div class="character-info">
+                <span class="character-name" th:text="${selectedCharacter.characterName}"></span>
+                <span class="character-detail"
+                      th:text="${selectedCharacter.worldName + ' · ' + selectedCharacter.characterClass + ' · Lv.' + selectedCharacter.characterLevel}"></span>
+            </div>
+        </div>
+
+        <!-- 캘린더 그리드 -->
+        <div class="calendar" th:if="${dayRecords != null}">
+            <!-- 요일 헤더 -->
+            <div class="calendar-weekdays">
+                <div class="weekday sun">일</div>
+                <div class="weekday">월</div>
+                <div class="weekday">화</div>
+                <div class="weekday">수</div>
+                <div class="weekday">목</div>
+                <div class="weekday">금</div>
+                <div class="weekday sat">토</div>
+            </div>
+
+            <!-- 날짜 셀 -->
+            <div class="calendar-grid">
+                <!-- 첫째 날 전 빈 칸 -->
+                <div th:each="i : ${#numbers.sequence(1, firstDayOfWeek)}" class="calendar-cell empty"></div>
+
+                <div th:each="day : ${dayRecords}"
+                     class="calendar-cell"
+                     th:classappend="${day.date.equals(T(java.time.LocalDate).now()) ? ' today' : ''}
+                                    + ${day.date.dayOfWeek.value == 7 ? ' sunday' : ''}
+                                    + ${day.date.dayOfWeek.value == 6 ? ' saturday' : ''}">
+                    <a th:href="@{/calendar/day(characterId=${selectedCharacter.id}, date=${day.date})}"
+                       class="cell-link">
+                        <div class="cell-date" th:text="${day.date.dayOfMonth}"></div>
+                        <div class="cell-badges" th:if="${day.hasAnyRecord()}">
+                            <span class="badge badge-boss"
+                                  th:if="${!day.bossRecords.isEmpty()}"
+                                  th:text="'⚔ ' + ${day.bossRecords.size()}"></span>
+                            <span class="badge badge-hunting"
+                                  th:if="${!day.huntingRecords.isEmpty()}"
+                                  th:text="'🗡 ' + ${day.huntingRecords.size()}"></span>
+                            <span class="badge badge-item"
+                                  th:if="${!day.itemRecords.isEmpty()}"
+                                  th:text="'💎 ' + ${day.itemRecords.size()}"></span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 범례 -->
+        <div class="legend">
+            <span class="badge badge-boss">⚔ 보스</span>
+            <span class="badge badge-hunting">🗡 사냥</span>
+            <span class="badge badge-item">💎 득템</span>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

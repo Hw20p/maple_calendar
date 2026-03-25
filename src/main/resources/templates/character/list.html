@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캐릭터 관리 - 메이플 캘린더</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light-mode');</script>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><a th:href="@{/calendar}">🍁 메이플 캘린더</a></div>
+    <div class="nav-links">
+        <a th:href="@{/calendar}">캘린더</a>
+        <a th:href="@{/characters}" class="active">캐릭터 관리</a>
+        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">☀️</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <div class="page-header">
+        <h2>캐릭터 관리</h2>
+    </div>
+
+    <!-- 캐릭터 등록 폼 -->
+    <div class="register-form">
+        <h3>캐릭터 등록</h3>
+        <form th:action="@{/characters/register}" method="post" class="inline-form">
+            <input type="text" name="characterName" class="form-control"
+                   placeholder="캐릭터명 입력" required>
+            <button type="submit" class="btn btn-primary">조회 & 등록</button>
+        </form>
+        <p class="form-hint">넥슨 Open API를 통해 캐릭터 정보를 자동으로 불러옵니다.</p>
+    </div>
+
+    <!-- 캐릭터 목록 -->
+    <div class="character-grid" th:if="${!characters.isEmpty()}">
+        <div th:each="ch : ${characters}" class="character-card-full"
+             th:classappend="${ch.mainCharacter ? ' main-char' : ''}">
+            <div class="card-badge" th:if="${ch.mainCharacter}">대표</div>
+            <img th:src="${ch.characterImage}" th:alt="${ch.characterName}"
+                 class="card-img" onerror="this.src='/images/default-char.png'">
+            <div class="card-info">
+                <div class="card-name" th:text="${ch.characterName}"></div>
+                <div class="card-detail"
+                     th:text="${ch.worldName + ' · ' + ch.characterClass}"></div>
+                <div class="card-level" th:text="'Lv. ' + ${ch.characterLevel}"></div>
+            </div>
+            <div class="card-actions">
+                <form th:if="${!ch.mainCharacter}" th:action="@{/characters/{id}/main(id=${ch.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-outline">대표 설정</button>
+                </form>
+                <form th:action="@{/characters/{id}/delete(id=${ch.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-delete"
+                            onclick="return confirm('캐릭터를 삭제하시겠습니까?\n관련된 모든 기록이 함께 삭제됩니다.')">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${characters.isEmpty()}" class="empty-state">
+        <p>등록된 캐릭터가 없습니다. 위에서 캐릭터를 등록해 보세요!</p>
+    </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

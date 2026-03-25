@@ -1,0 +1,9 @@
+spring:
+  profiles:
+    group:
+      develop:
+        - dev
+        - global
+      product:
+        - prd
+        - global
